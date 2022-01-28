@@ -1,0 +1,169 @@
+$word-length: 5;
+$letter-1-size: 4rem;
+$letter-1-margin: 4px;
+
+.content {
+    width: 100%;
+    height: 100%;
+    padding: 2rem;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    > *:not(:first-child) {
+        margin-top: 2rem;
+    }
+
+    .title {
+        font-size: 4rem;
+        font-weight: 700;
+    }
+
+    .large-letters {
+        width: calc($word-length * (4rem + 2 * 2px));
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .small-letters {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        &-row {
+            display: flex;
+        }
+    }
+}
+
+.letter {
+    box-sizing: border-box;
+    text-transform: capitalize;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--small {
+        @extend .letter;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin: 2px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border: 2px solid;
+        border-radius: 4px;
+    }
+
+    &--large {
+        @extend .letter;
+        width: 4rem;
+        height: 4rem;
+        margin: 3px 2px;
+        font-size: 1.8rem;
+        font-weight: 600;
+        border: 2px solid;
+        border-radius: 6px;
+    }
+
+    &--unknown {
+        @extend .letter;
+        background-color: white;
+        border-color: rgb(207, 207, 207);
+        color: rgb(39, 39, 39);
+    }
+
+    &--wrong {
+        @extend .letter;
+        background-color: rgb(129, 129, 129);
+        border-color: rgb(129, 129, 129);
+        color: white;
+    }
+
+    &--wrong-spot {
+        @extend .letter;
+        background-color: #e30022;
+        border-color: #e30022;
+        color: white;
+    }
+
+    &--correct-spot {
+        @extend .letter;
+        background-color: #8db600;
+        border-color: #8db600;
+        color: white;
+    }
+
+    &--invalid-word {
+        @extend .letter;
+        animation: letter--invalid-word 0.25s ease-out;
+    }
+
+    &--typed:not(&--invalid-word) {
+        @extend .letter;
+        animation: letter--typed 0.1s linear;
+    }
+
+    &--revealed {
+        @extend .letter;
+        animation: letter--revealed 0.2s ease-in-out;
+    }
+}
+
+#confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 100;
+}
+
+@keyframes letter--typed {
+    0% {
+    }
+    50% {
+        transform: scale(1.05, 1.05);
+    }
+    100% {
+        transform: scale(1, 1);
+    }
+}
+
+@keyframes letter--revealed {
+    0% {
+        background-color: white;
+        border-color: rgb(207, 207, 207);
+        color: rgb(39, 39, 39);
+    }
+    50% {
+        background-color: white;
+        border-color: rgb(207, 207, 207);
+        color: rgb(39, 39, 39);
+        transform: rotateY(90deg) scale(0.95);
+    }
+    100% {
+        transform: rotateX(0);
+    }
+}
+
+@keyframes letter--invalid-word {
+    0% {
+        transform: translateX(0px);
+    }
+    25% {
+        transform: translateX(2px);
+    }
+    50% {
+        transform: translateX(-2px);
+    }
+    75% {
+        transform: translateX(2px);
+    }
+    100% {
+        transform: translateX(0px);
+    }
+}
