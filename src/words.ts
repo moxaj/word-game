@@ -1,4 +1,4 @@
-export default [
+export const words = [
     'abált',
     'abban',
     'abcúg',

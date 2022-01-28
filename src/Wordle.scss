@@ -17,14 +17,37 @@ $letter-1-margin: 4px;
     }
 
     .title {
-        font-size: 4rem;
+        font-size: 3.2rem;
         font-weight: 700;
     }
 
-    .large-letters {
-        width: calc($word-length * (4rem + 2 * 2px));
-        display: flex;
-        flex-wrap: wrap;
+    .grid {
+        align-self: stretch;
+        display: grid;
+        grid-template: "left middle right" auto / 1fr calc($word-length * (3rem + 2 * 2px)) 1fr;
+
+        .large-letters {
+            grid-area: middle;
+            width: calc($word-length * (3rem + 2 * 2px));
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .controls {
+            grid-area: left;
+            padding: 2rem;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .messages {
+            grid-area: right;
+            padding: 2rem;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
     }
 
     .small-letters {
@@ -41,6 +64,8 @@ $letter-1-margin: 4px;
 .letter {
     box-sizing: border-box;
     text-transform: capitalize;
+    user-select: none;
+    pointer-events: none;
 
     display: flex;
     align-items: center;
@@ -51,7 +76,7 @@ $letter-1-margin: 4px;
         width: 2.5rem;
         height: 2.5rem;
         margin: 2px;
-        font-size: 0.9rem;
+        font-size: 1rem;
         font-weight: 600;
         border: 2px solid;
         border-radius: 4px;
@@ -59,10 +84,10 @@ $letter-1-margin: 4px;
 
     &--large {
         @extend .letter;
-        width: 4rem;
-        height: 4rem;
+        width: 3rem;
+        height: 3rem;
         margin: 3px 2px;
-        font-size: 1.8rem;
+        font-size: 1.5rem;
         font-weight: 600;
         border: 2px solid;
         border-radius: 6px;
@@ -72,6 +97,13 @@ $letter-1-margin: 4px;
         @extend .letter;
         background-color: white;
         border-color: rgb(207, 207, 207);
+        color: rgb(39, 39, 39);
+    }
+
+    &--unknown-filled {
+        @extend .letter;
+        background-color: white;
+        border-color: rgb(136, 136, 136);
         color: rgb(39, 39, 39);
     }
 
@@ -98,7 +130,7 @@ $letter-1-margin: 4px;
 
     &--invalid-word {
         @extend .letter;
-        animation: letter--invalid-word 0.25s ease-out;
+        animation: letter--guessed-invalid-word 0.25s ease-out;
     }
 
     &--typed:not(&--invalid-word) {
@@ -106,9 +138,9 @@ $letter-1-margin: 4px;
         animation: letter--typed 0.1s linear;
     }
 
-    &--revealed {
+    &--guessed-valid-word {
         @extend .letter;
-        animation: letter--revealed 0.2s ease-in-out;
+        animation: letter--guessed-valid-word 0.2s ease-in-out;
     }
 }
 
@@ -126,14 +158,14 @@ $letter-1-margin: 4px;
     0% {
     }
     50% {
-        transform: scale(1.05, 1.05);
+        transform: translateY(-2px);
     }
     100% {
-        transform: scale(1, 1);
+        transform: translateY(0);
     }
 }
 
-@keyframes letter--revealed {
+@keyframes letter--guessed-valid-word {
     0% {
         background-color: white;
         border-color: rgb(207, 207, 207);
@@ -150,7 +182,7 @@ $letter-1-margin: 4px;
     }
 }
 
-@keyframes letter--invalid-word {
+@keyframes letter--guessed-invalid-word {
     0% {
         transform: translateX(0px);
     }
