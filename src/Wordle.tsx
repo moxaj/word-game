@@ -1,7 +1,8 @@
+import './Wordle.scss';
 import confetti from 'canvas-confetti';
 import React, { useEffect, useReducer } from 'react';
 import { words } from './words';
-import './Wordle.scss';
+import classNames from 'classnames';
 
 type Action = {
   type: 'restart';
@@ -124,9 +125,8 @@ const applyAction = (state: State, action: Action): State => {
 
 export const Wordle = () => {
   const largeLetterClass = ({ word, letterIndex, guessIndex, animationEvents }: State, letter: string | undefined, globalLetterIndex: number): string => {
-    return [
+    return classNames(
       'letter--large',
-      // Color
       globalLetterIndex >= guessIndex * wordLength
         ? (letter === undefined ? 'letter--unknown' : 'letter--unknown-filled')
         : letter === word[globalLetterIndex % wordLength]
@@ -134,24 +134,16 @@ export const Wordle = () => {
           : word.includes(letter ?? '')
             ? 'letter--wrong-spot'
             : 'letter--wrong',
-      // Type animation
-      animationEvents.some(animationEvent => animationEvent.type === 'typed-letter')
-        && globalLetterIndex === guessIndex * wordLength + letterIndex - 1
-        ? 'letter--typed'
-        : undefined,
-      // Invalid word animation
-      animationEvents.some(animationEvent => animationEvent.type === 'guessed-invalid-word')
-        && globalLetterIndex >= guessIndex * wordLength
-        && globalLetterIndex < (guessIndex + 1) * wordLength
-        ? 'letter--guessed-invalid-word'
-        : undefined,
-      // Valid word animation
-      animationEvents.some(animationEvent => animationEvent.type === 'guessed-valid-word')
-        && globalLetterIndex >= (guessIndex - 1) * wordLength
-        && globalLetterIndex < guessIndex * wordLength
-        ? 'letter--guessed-valid-word'
-        : undefined,
-    ].filter(letterClass => letterClass !== undefined).join(' ');
+      {
+        'letter--typed': animationEvents.some(animationEvent => animationEvent.type === 'typed-letter')
+          && globalLetterIndex === guessIndex * wordLength + letterIndex - 1,
+        'letter--guessed-invalid-word': animationEvents.some(animationEvent => animationEvent.type === 'guessed-invalid-word')
+          && globalLetterIndex >= guessIndex * wordLength
+          && globalLetterIndex < (guessIndex + 1) * wordLength,
+        'letter--guessed-valid-word': animationEvents.some(animationEvent => animationEvent.type === 'guessed-valid-word')
+          && globalLetterIndex >= (guessIndex - 1) * wordLength
+          && globalLetterIndex < guessIndex * wordLength
+      });
   };
   const largeLetterKey = ({ guessIndex, animationEventCounter }: State, globalLetterIndex: number): string => {
     return [
@@ -163,9 +155,8 @@ export const Wordle = () => {
     ].filter(letterKey => letterKey !== undefined).join(' ');
   };
   const smallLetterClass = ({ word, letters, letterIndex, guessIndex, animationEvents }: State, letter: string): string => {
-    return [
+    return classNames(
       'letter--small',
-      // Color
       !letters.slice(0, guessIndex * wordLength).includes(letter)
         ? 'letter--unknown'
         : !word.includes(letter)
@@ -175,11 +166,11 @@ export const Wordle = () => {
             .filter((letter_, globalLetterIndex) => letter === letter_ && letter === word[globalLetterIndex % wordLength]).length > 0
             ? 'letter--correct-spot'
             : 'letter--wrong-spot',
-      // Type animation
-      animationEvents.some(animationEvent => animationEvent.type === 'typed-letter' && letters[guessIndex * wordLength + letterIndex - 1] === letter)
-        ? 'letter--typed'
-        : undefined,
-    ].filter(letterClass => letterClass !== undefined).join(' ');
+      {
+        'letter--typed': animationEvents.some(animationEvent =>
+          animationEvent.type === 'typed-letter' && letters[guessIndex * wordLength + letterIndex - 1] === letter)
+      }
+    );
   };
   const smallLetterKey = ({ letters, letterIndex, guessIndex, animationEvents, animationEventCounter }: State, letter: string): string => {
     return [
