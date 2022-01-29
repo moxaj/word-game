@@ -11,17 +11,17 @@ type Action = {
 } | {
   type: 'remove-letter';
 } | {
-  type: 'guess'
+  type: 'guess';
 };
 
 type AnimationEvent = {
-  type: 'typed-letter',
+  type: 'typed-letter';
 } | {
-  type: 'guessed-invalid-word'
+  type: 'guessed-invalid-word';
 } | {
-  type: 'guessed-valid-word'
+  type: 'guessed-valid-word';
 } | {
-  type: 'guessed-correct-word'
+  type: 'guessed-correct-word';
 };
 
 type State = {
@@ -53,16 +53,20 @@ const generateInitialState = (): State => ({
   animationEventCounter: 0
 });
 const applyAction = (state: State, action: Action): State => {
-  let { winState, word, letters, letterIndex, guessIndex, animationEventCounter } = state;
+  let { winState, word, letters, letterIndex, guessIndex, animationEvents, animationEventCounter } = state;
+  if (animationEvents !== []) {
+    state = {
+      ...state,
+      animationEvents: []
+    };
+  }
+
   switch (action.type) {
     case 'restart':
       return generateInitialState();
     case 'add-letter':
       if (winState !== 'guessing' || letterIndex === wordLength) {
-        return {
-          ...state,
-          animationEvents: []
-        };
+        return state;
       }
 
       letters = letters.slice();
@@ -84,8 +88,7 @@ const applyAction = (state: State, action: Action): State => {
       return {
         ...state,
         letters,
-        letterIndex: letterIndex - 1,
-        animationEvents: []
+        letterIndex: letterIndex - 1
       };
     case 'guess':
       if (winState !== 'guessing') {
@@ -122,8 +125,8 @@ const applyAction = (state: State, action: Action): State => {
 export const Wordle = () => {
   const largeLetterClass = ({ word, letterIndex, guessIndex, animationEvents }: State, letter: string | undefined, globalLetterIndex: number): string => {
     return [
-      // Color
       'letter--large',
+      // Color
       globalLetterIndex >= guessIndex * wordLength
         ? (letter === undefined ? 'letter--unknown' : 'letter--unknown-filled')
         : letter === word[globalLetterIndex % wordLength]
@@ -140,7 +143,7 @@ export const Wordle = () => {
       animationEvents.some(animationEvent => animationEvent.type === 'guessed-invalid-word')
         && globalLetterIndex >= guessIndex * wordLength
         && globalLetterIndex < (guessIndex + 1) * wordLength
-        ? 'letter--invalid-word'
+        ? 'letter--guessed-invalid-word'
         : undefined,
       // Valid word animation
       animationEvents.some(animationEvent => animationEvent.type === 'guessed-valid-word')
@@ -161,6 +164,7 @@ export const Wordle = () => {
   };
   const smallLetterClass = ({ word, letters, letterIndex, guessIndex, animationEvents }: State, letter: string): string => {
     return [
+      'letter--small',
       // Color
       !letters.slice(0, guessIndex * wordLength).includes(letter)
         ? 'letter--unknown'
@@ -207,9 +211,9 @@ export const Wordle = () => {
     if (state.animationEvents.some(animationEvent => animationEvent.type === 'guessed-correct-word')) {
       const timer = setTimeout(() => {
         confetti.create(document.getElementById('confetti-canvas') as HTMLCanvasElement, {})({
-          particleCount: 100,
+          particleCount: 100
         });
-      }, 500);
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [state]);
@@ -219,37 +223,31 @@ export const Wordle = () => {
       <div className='title'>
         Szójáték
       </div>
-
-      <div className='grid'>
-        <div className='large-letters'>
-          {state.letters.map((letter, letterIndex) => (
-            <div key={largeLetterKey(state, letterIndex)} className={largeLetterClass(state, letter, letterIndex)}>
-              {letter ?? ' '}
-            </div>
-          ))}
-        </div>
-        <div className='controls'>
-          <div>
-            <b>Backspace</b>: karakter törlése<br />
-            <b>Enter</b>: szó bevitele<br />
-            <b>Ctrl + Enter</b>: új feladvány kérése<br />
-          </div>
-        </div>
-        <div className='messages'>
-          {state.winState === 'failed' && <div>
-            A megoldás: <b>{state.word}</b>.
-          </div>}
-          {state.winState === 'won' && <div>
-            <b>Szép munka!</b>
-          </div>}
-        </div>
+      <div className='controls'>
+        <b>Backspace</b>: karakter törlése<br />
+        <b>Enter</b>: szó bevitele<br />
+        <b>Ctrl + Enter</b>: új feladvány kérése<br />
       </div>
-
+      <div className='large-letters'>
+        {state.letters.map((letter, letterIndex) => (
+          <div key={largeLetterKey(state, letterIndex)} className={largeLetterClass(state, letter, letterIndex)}>
+            {letter ?? ' '}
+          </div>
+        ))}
+      </div>
+      <div className='messages'>
+        {state.winState === 'failed' && <div>
+          A megoldás: <b>{state.word}</b>.
+        </div>}
+        {state.winState === 'won' && <div>
+          <b>Szép munka!</b>
+        </div>}
+      </div>
       <div className='small-letters'>
         {letterLayout.map((letterGroup, index) => (
           <div key={index} className='small-letters-row'>
             {letterGroup.map(letter => (
-              <div key={smallLetterKey(state, letter)} className={`letter--small ${smallLetterClass(state, letter)}`} onClick={() => dispatch({ type: 'add-letter', letter })}>
+              <div key={smallLetterKey(state, letter)} className={smallLetterClass(state, letter)} onClick={() => dispatch({ type: 'add-letter', letter })}>
                 {letter ?? ''}
               </div>
             ))}
