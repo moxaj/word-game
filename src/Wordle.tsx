@@ -1,8 +1,8 @@
-import './Wordle.scss';
-import confetti from 'canvas-confetti';
 import React, { useEffect, useReducer } from 'react';
-import { words } from './words';
 import classNames from 'classnames';
+import { words } from './words';
+import confetti from 'canvas-confetti';
+import './Wordle.scss';
 
 type Action = {
   type: 'restart';
@@ -23,6 +23,8 @@ type AnimationEvent = {
   type: 'guessed-valid-word';
 } | {
   type: 'guessed-correct-word';
+} | {
+  type: 'restarted';
 };
 
 type State = {
@@ -43,6 +45,7 @@ const letterLayout = [
   ['í', 'y', 'x', 'c', 'v', 'b', 'n', 'm', 'ö', 'ü', 'ó']
 ];
 const allLetters = letterLayout.flatMap(letterGroup => letterGroup);
+const wordSet = new Set(words);
 
 const generateInitialState = (): State => ({
   winState: 'guessing',
@@ -64,7 +67,11 @@ const applyAction = (state: State, action: Action): State => {
 
   switch (action.type) {
     case 'restart':
-      return generateInitialState();
+      return {
+        ...generateInitialState(),
+        animationEvents: [{ type: 'restarted' }],
+        animationEventCounter: animationEventCounter + 1
+      };
     case 'add-letter':
       if (winState !== 'guessing' || letterIndex === wordLength) {
         return state;
@@ -97,7 +104,7 @@ const applyAction = (state: State, action: Action): State => {
       }
 
       const guessedWord = letters.slice(guessIndex * wordLength, (guessIndex + 1) * wordLength).join('');
-      if (!words.includes(guessedWord)) {
+      if (!wordSet.has(guessedWord)) {
         return {
           ...state,
           animationEvents: [{ type: 'guessed-invalid-word' }],
@@ -114,7 +121,9 @@ const applyAction = (state: State, action: Action): State => {
         ...state,
         winState: guessedWord === word
           ? 'won'
-          : (guessIndex === maxGuessCount - 1 ? 'failed' : 'guessing'),
+          : guessIndex === maxGuessCount - 1
+            ? 'failed'
+            : 'guessing',
         letterIndex: 0,
         guessIndex: guessIndex + 1,
         animationEvents,
@@ -124,7 +133,16 @@ const applyAction = (state: State, action: Action): State => {
 };
 
 export const Wordle = () => {
-  const largeLetterClass = ({ word, letterIndex, guessIndex, animationEvents }: State, letter: string | undefined, globalLetterIndex: number): string => {
+  const largeLetterKey = ({ letters, guessIndex, animationEvents, animationEventCounter }: State, globalLetterIndex: number): string => {
+    return [
+      globalLetterIndex,
+      (globalLetterIndex >= (guessIndex - 1) * wordLength && globalLetterIndex < (guessIndex + 1) * wordLength)
+        || animationEvents.some(animationEvent => animationEvent.type === 'restarted')
+        ? animationEventCounter
+        : undefined
+    ].filter(letterKey => letterKey !== undefined).join(' ');
+  };
+  const largeLetterClassNames = ({ word, letterIndex, guessIndex, animationEvents }: State, letter: string | undefined, globalLetterIndex: number): string => {
     return classNames(
       'letter--large',
       globalLetterIndex >= guessIndex * wordLength
@@ -142,19 +160,19 @@ export const Wordle = () => {
           && globalLetterIndex < (guessIndex + 1) * wordLength,
         'letter--guessed-valid-word': animationEvents.some(animationEvent => animationEvent.type === 'guessed-valid-word')
           && globalLetterIndex >= (guessIndex - 1) * wordLength
-          && globalLetterIndex < guessIndex * wordLength
+          && globalLetterIndex < guessIndex * wordLength,
+        'letter--restarted': animationEvents.some(animationEvent => animationEvent.type === 'restarted')
       });
   };
-  const largeLetterKey = ({ guessIndex, animationEventCounter }: State, globalLetterIndex: number): string => {
+  const smallLetterKey = ({ letters, letterIndex, guessIndex, animationEvents, animationEventCounter }: State, letter: string): string => {
     return [
-      globalLetterIndex,
-      globalLetterIndex >= (guessIndex - 1) * wordLength
-        && globalLetterIndex < (guessIndex + 1) * wordLength
+      letter,
+      animationEvents.some(animationEvent => animationEvent.type === 'typed-letter' && letters[guessIndex * wordLength + letterIndex - 1] === letter)
         ? animationEventCounter
         : undefined
     ].filter(letterKey => letterKey !== undefined).join(' ');
   };
-  const smallLetterClass = ({ word, letters, letterIndex, guessIndex, animationEvents }: State, letter: string): string => {
+  const smallLetterClassNames = ({ word, letters, letterIndex, guessIndex, animationEvents }: State, letter: string): string => {
     return classNames(
       'letter--small',
       !letters.slice(0, guessIndex * wordLength).includes(letter)
@@ -171,14 +189,6 @@ export const Wordle = () => {
           animationEvent.type === 'typed-letter' && letters[guessIndex * wordLength + letterIndex - 1] === letter)
       }
     );
-  };
-  const smallLetterKey = ({ letters, letterIndex, guessIndex, animationEvents, animationEventCounter }: State, letter: string): string => {
-    return [
-      letter,
-      animationEvents.some(animationEvent => animationEvent.type === 'typed-letter' && letters[guessIndex * wordLength + letterIndex - 1] === letter)
-        ? animationEventCounter
-        : undefined
-    ].filter(letterKey => letterKey !== undefined).join(' ');
   };
 
   const [state, dispatch] = useReducer(applyAction, generateInitialState());
@@ -200,15 +210,9 @@ export const Wordle = () => {
   }, []);
   useEffect(() => {
     if (state.animationEvents.some(animationEvent => animationEvent.type === 'guessed-correct-word')) {
-      const timer = setTimeout(() => {
-        confetti.create(document.getElementById('confetti-canvas') as HTMLCanvasElement, {})({
-          particleCount: 100
-        });
-      }, 200);
-      return () => clearTimeout(timer);
+      confetti.create(document.getElementById('confetti-canvas') as HTMLCanvasElement, {})({ particleCount: 100 });
     }
   }, [state]);
-
   return (
     <div className='content'>
       <div className='title'>
@@ -221,31 +225,26 @@ export const Wordle = () => {
       </div>
       <div className='large-letters'>
         {state.letters.map((letter, letterIndex) => (
-          <div key={largeLetterKey(state, letterIndex)} className={largeLetterClass(state, letter, letterIndex)}>
+          <div key={largeLetterKey(state, letterIndex)} className={largeLetterClassNames(state, letter, letterIndex)}>
             {letter ?? ' '}
           </div>
         ))}
       </div>
       <div className='messages'>
-        {state.winState === 'failed' && <div>
-          A megoldás: <b>{state.word}</b>.
-        </div>}
-        {state.winState === 'won' && <div>
-          <b>Szép munka!</b>
-        </div>}
+        {state.winState === 'failed' && <span>A megoldás: <b>{state.word}</b>.</span>}
+        {state.winState === 'won' && <span><b>Szép munka!</b></span>}
       </div>
       <div className='small-letters'>
-        {letterLayout.map((letterGroup, index) => (
+        {letterLayout.map((letterRow, index) => (
           <div key={index} className='small-letters-row'>
-            {letterGroup.map(letter => (
-              <div key={smallLetterKey(state, letter)} className={smallLetterClass(state, letter)} onClick={() => dispatch({ type: 'add-letter', letter })}>
-                {letter ?? ''}
+            {letterRow.map(letter => (
+              <div key={smallLetterKey(state, letter)} className={smallLetterClassNames(state, letter)}>
+                {letter}
               </div>
             ))}
           </div>
         ))}
       </div>
-
       <canvas id='confetti-canvas' width={1000} height={1000}></canvas>
     </div >
   );

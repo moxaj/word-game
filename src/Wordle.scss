@@ -8,8 +8,8 @@
         "top top top" auto
         "left middle right" auto
         "bottom bottom bottom" auto / 1fr auto 1fr;
-    gap: 2rem;
     place-items: center;
+    gap: 2rem;
 
     .title {
         grid-area: top;
@@ -129,6 +129,11 @@
         @extend .letter;
         animation: letter--guessed-valid-word 0.15s linear;
     }
+
+    &--restarted {
+        @extend .letter;
+        animation: letter--restarted 0.2s linear;
+    }
 }
 
 #confetti-canvas {
@@ -147,6 +152,18 @@
     }
 }
 
+@keyframes letter--guessed-invalid-word {
+    25% {
+        transform: translateX(2px);
+    }
+    50% {
+        transform: translateX(-2px);
+    }
+    75% {
+        transform: translateX(2px);
+    }
+}
+
 @keyframes letter--guessed-valid-word {
     0% {
         color: #272727;
@@ -161,14 +178,8 @@
     }
 }
 
-@keyframes letter--guessed-invalid-word {
-    25% {
-        transform: translateX(2px);
-    }
-    50% {
-        transform: translateX(-2px);
-    }
-    75% {
-        transform: translateX(2px);
+@keyframes letter--restarted {
+    0% {
+        transform: scale(0) rotateZ(90deg);
     }
 }

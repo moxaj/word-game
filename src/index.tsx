@@ -7,5 +7,4 @@ ReactDOM.render(
   <React.StrictMode>
     <Wordle />
   </React.StrictMode>,
-  document.getElementById('root')
-);
+  document.getElementById('root'));
